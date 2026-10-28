@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Interactive 3D Industrial Gas Detection and Monitoring System</title>
+<style>
+:root{--bg:#0f161c;--pn:rgba(18,28,36,.92);--ln:#2b3a46;--tx:#dbe6ee;--mu:#8aa0b0;--ac:#f2a900;--g:#2ecc71;--y:#f5c518;--r:#ff3b30;color-scheme:dark}
+*{box-sizing:border-box}[hidden]{display:none!important}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--tx);font:14px system-ui,Segoe UI,Arial,sans-serif;overflow:hidden}
+#c{position:fixed;inset:0}#labels{position:fixed;inset:0;pointer-events:none;overflow:hidden}
+.lb{position:absolute;left:0;top:0;font-size:11px;padding:2px 6px;border-radius:4px;background:rgba(10,16,22,.8);border:1px solid var(--ac);color:#ffe9b0;white-space:nowrap}
+.card{background:var(--pn);border:1px solid var(--ln);border-radius:10px;backdrop-filter:blur(6px);box-shadow:0 6px 24px #0008}
+#side{position:fixed;left:10px;top:10px;width:320px;max-height:calc(100% - 20px);overflow:auto;padding:12px}
+h1{font-size:14px;margin:0 0 8px;color:var(--ac);letter-spacing:.3px}h2{font-size:12px;margin:12px 0 6px;color:var(--mu);text-transform:uppercase;letter-spacing:1px}
+#big{font:700 38px/1 ui-monospace,Consolas,monospace}#ul{color:var(--mu);margin-left:4px}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.sp{justify-content:space-between}
+button{font:inherit;color:var(--tx);background:#22323e;border:1px solid #3a4f5e;border-radius:7px;padding:7px 12px;cursor:pointer}
+button:hover:not(:disabled){background:#2e4454}button:disabled{opacity:.4;cursor:default}
+.go{background:#1e7a45;border-color:#2ecc71}.stop{background:#8a2a22;border-color:#ff3b30}
+.lamps{display:flex;gap:10px}.lamp{width:22px;height:22px;border-radius:50%;background:#26323b;border:2px solid #44566a}
+#lg.on{background:var(--g);box-shadow:0 0 14px var(--g)}#ly.on{background:var(--y);box-shadow:0 0 14px var(--y)}#lr.on{background:var(--r);box-shadow:0 0 18px var(--r)}
+#stat{padding:3px 10px;border-radius:12px;font-weight:700;font-size:12px;background:#44566a}
+.sw{position:relative;width:46px;height:24px;display:inline-block}.sw input{opacity:0;width:0;height:0}
+.sw i{position:absolute;inset:0;background:#44566a;border-radius:12px;transition:.2s;cursor:pointer}
+.sw i:before{content:"";position:absolute;width:18px;height:18px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.2s}
+.sw input:checked+i{background:var(--r)}.sw input:checked+i:before{transform:translateX(22px)}
+input[type=range]{width:100%;accent-color:var(--ac)}input[type=number],select{width:90px;background:#0e171d;color:var(--tx);border:1px solid #3a4f5e;border-radius:6px;padding:4px}
+#gr{width:100%;height:130px;background:#0a1116;border:1px solid var(--ln);border-radius:6px;display:block}
+small,.mu{color:var(--mu);font-size:11px}
+#top{position:fixed;right:10px;top:10px;display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;max-width:calc(100% - 350px)}
+#info,#how{position:fixed;right:10px;width:310px;padding:12px}#info{bottom:10px}#how{top:56px}
+#info h3,#how h3{margin:0 0 6px;color:var(--ac);font-size:15px}#info ul{margin:6px 0;padding-left:18px;color:var(--mu);font-size:12px}
+#live{color:#7fe3ff;font-family:ui-monospace,Consolas,monospace;margin:6px 0}
+.x{float:right;padding:0 8px}.dots{display:flex;gap:5px;margin:8px 0}.dots b{width:9px;height:9px;border-radius:50%;background:#44566a}.dots b.a{background:var(--ac)}
+#diag{position:fixed;inset:0;background:#000a;display:flex;align-items:center;justify-content:center;padding:12px}
+#diag .card{max-width:860px;width:100%;padding:14px}#diag svg{width:100%;height:auto;background:#0a1116;border-radius:8px}
+.err{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;padding:30px;font-size:18px;color:#ff9a90}
+@media(max-width:800px){#side{top:auto;bottom:8px;left:8px;right:8px;width:auto;max-height:46%}#top{max-width:calc(100% - 20px);right:8px}
+#info{top:100px;bottom:auto;right:8px;width:260px}#how{top:100px;width:260px}}
+</style></head><body>
+<div id="c"></div><div id="labels"></div>
+
+<div id="side" class="card">
+<h1>⚙ 3D GAS DETECTION &amp; MONITORING SYSTEM</h1>
+<div class="row sp"><div><span id="big">---</span><span id="ul"></span></div><span id="stat">STANDBY</span></div>
+<div class="row sp" style="margin-top:6px"><small id="sub">CH4 methane · LEL 5 % vol</small><div class="lamps"><div class="lamp" id="lg"></div><div class="lamp" id="ly"></div><div class="lamp" id="lr"></div></div></div>
+<h2>Monitoring</h2>
+<div class="row"><button id="bStart" class="go">▶ START</button><button id="bStop" class="stop" disabled>■ STOP</button><button id="bReset">↺ RESET</button></div>
+<h2>Leak simulation</h2>
+<div class="row sp"><span>Gas leak</span><label class="sw"><input type="checkbox" id="leak"><i></i></label></div>
+<div style="margin-top:8px">Leak concentration target: <b id="sv"></b></div>
+<input type="range" id="slider" min="0" max="25000" step="100" value="12000">
+<h2>Thresholds (ppm)</h2>
+<div class="row sp"><label>Warning <input type="number" id="warn" min="100" step="100"></label><label>Alarm <input type="number" id="alarm" min="200" step="100"></label></div>
+<div class="row sp" style="margin-top:8px"><label>Units <select id="unit"><option>ppm</option><option>%LEL</option></select></label><label><input type="checkbox" id="mute"> Mute</label><label><input type="checkbox" id="lab" checked> Labels</label></div>
+<h2>Concentration trend</h2><canvas id="gr"></canvas>
+<div class="row" style="margin-top:8px"><button data-v="ov">Overview</button><button data-v="leak">Leak point</button><button data-v="panel">Panel</button><button data-v="tank">Tank</button></div>
+<p class="mu" style="margin:8px 0 0;font-size:11px">Drag = rotate · wheel/pinch = zoom · right-drag = pan · click equipment for details. Simulated educational values, not certified safety measurements.</p>
+</div>
+
+<div id="top"><button id="bHow">❓ How It Works</button><button id="bDiag">📐 Installation Diagram</button></div>
+
+<div id="info" class="card" hidden><button class="x" id="ix">✕</button><h3 id="it"></h3><div id="idesc"></div><ul id="is"></ul><div id="live"></div><button id="ia" hidden></button></div>
+
+<div id="how" class="card" hidden><button class="x" id="hx">✕</button><small id="hn"></small><h3 id="ht"></h3><div id="hd"></div><div class="dots" id="dots"></div>
+<div class="row"><button id="hp">◀ Prev</button><button id="hnx">Next ▶</button><button id="hdemo" class="go">Run demo</button></div></div>
+
+<div id="diag" hidden><div class="card"><button class="x" id="dx">✕ Close</button><h3 style="margin:0 0 8px;color:var(--ac)">Installation Diagram</h3>
+<svg viewBox="0 0 860 330" font-family="Arial" font-size="13">
+<defs><marker id="ar" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0L8,4L0,8z" fill="#7fe3ff"/></marker></defs>
+<rect x="10" y="20" width="200" height="120" rx="8" fill="#1a2630" stroke="#d4a017" stroke-width="2"/><text x="110" y="42" fill="#d4a017" text-anchor="middle">GAS PIPELINE</text>
+<rect x="30" y="70" width="160" height="26" fill="#d4a017"/><circle cx="110" cy="70" r="6" fill="#ff9a3c"/><text x="110" y="125" fill="#ff9a3c" text-anchor="middle" font-size="11">flange leak point (CH4)</text>
+<rect x="250" y="35" width="150" height="70" rx="6" fill="#23363f" stroke="#8aa0b0"/><text x="325" y="62" fill="#fff" text-anchor="middle">Sampling inlet</text><text x="325" y="82" fill="#8aa0b0" text-anchor="middle" font-size="11">+ sampling tube</text>
+<rect x="250" y="175" width="150" height="80" rx="6" fill="#1f5f8b" stroke="#7fc4ff"/><text x="325" y="205" fill="#fff" text-anchor="middle">Methane sensor</text><text x="325" y="225" fill="#cfe" text-anchor="middle" font-size="11">IR / catalytic element</text>
+<rect x="470" y="175" width="150" height="80" rx="6" fill="#2d4a5a" stroke="#7fc4ff"/><text x="545" y="205" fill="#fff" text-anchor="middle">Digital transmitter</text><text x="545" y="225" fill="#cfe" text-anchor="middle" font-size="11">4–20 mA / digital</text>
+<rect x="690" y="175" width="150" height="80" rx="6" fill="#34505f" stroke="#2ecc71"/><text x="765" y="205" fill="#fff" text-anchor="middle">Control panel</text><text x="765" y="225" fill="#cfe" text-anchor="middle" font-size="11">display · logic · alarm</text>
+<rect x="690" y="40" width="150" height="70" rx="6" fill="#4a2a2a" stroke="#ff3b30"/><text x="765" y="70" fill="#fff" text-anchor="middle">Alarm beacon</text><text x="765" y="90" fill="#fbb" text-anchor="middle" font-size="11">green / yellow / red</text>
+<g stroke="#7fc4ff" stroke-width="2" fill="none" marker-end="url(#ar)"><path d="M190 83H250"/><path d="M325 105V175"/><path d="M400 215H470"/><path d="M620 215H690"/><path d="M765 175V110"/></g>
+<text x="440" y="205" fill="#7fe3ff" text-anchor="middle" font-size="11">signal cable</text><text x="655" y="205" fill="#7fe3ff" text-anchor="middle" font-size="11">cable</text>
+<text x="333" y="150" fill="#ff9a3c" font-size="11">gas sample</text>
+<text x="20" y="300" fill="#8aa0b0" font-size="12">Signal path: gas → inlet → sensor → transmitter (measurement signal) → control panel → alarm beacon.</text></svg></div></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script>
+(function(){
+if(!window.THREE||!THREE.OrbitControls){document.body.insertAdjacentHTML('beforeend','<div class="err">Three.js could not be loaded. Check your internet connection (see README for offline setup).</div>');return}
+const T=THREE,$=i=>document.getElementById(i),PI=Math.PI;
+
+/* ---------- renderer / scene ---------- */
+const scene=new T.Scene();scene.background=new T.Color(0x141c23);scene.fog=new T.Fog(0x141c23,28,70);
+const cam=new T.PerspectiveCamera(50,1,.1,200);cam.position.set(9,6,11);
+const R=new T.WebGLRenderer({antialias:true});R.setPixelRatio(Math.min(devicePixelRatio,2));R.shadowMap.enabled=true;R.shadowMap.type=T.PCFSoftShadowMap;
+$('c').appendChild(R.domElement);
+const ctl=new T.OrbitControls(cam,R.domElement);ctl.target.set(0,2,0);ctl.enableDamping=true;ctl.maxPolarAngle=PI*.495;ctl.minDistance=1.5;ctl.maxDistance=35;
+scene.add(new T.HemisphereLight(0xbfd4e6,0x2a2f33,.85));
+const sun=new T.DirectionalLight(0xffffff,.9);sun.position.set(8,14,8);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);
+Object.assign(sun.shadow.camera,{left:-16,right:16,top:16,bottom:-16});sun.shadow.bias=-.0005;scene.add(sun);
+const bl=new T.PointLight(0x00ff00,0,12);bl.position.set(4.2,3.4,2.6);scene.add(bl);
+
+/* ---------- helpers ---------- */
+const M=(c,m=.5,r=.5,o={})=>new T.MeshStandardMaterial(Object.assign({color:c,metalness:m,roughness:r},o));
+const steel=M(0x9aa5ad,.8,.35),paint=M(0xc4cad0,.4,.5),pipeM=M(0xd4a017,.5,.45),dark=M(0x23282d,.6,.5),blue=M(0x1f5f8b,.4,.5),cab=M(0x34505f,.5,.5),redM=M(0xc0392b,.3,.5),slab=M(0x3a3f44,0,.95);
+const pick=[];
+const G=(x,y,z)=>{const g=new T.Group();g.position.set(x,y,z);scene.add(g);return g};
+const mk=(g,m,x,y,z,p)=>{const o=new T.Mesh(g,m);o.position.set(x,y,z);o.castShadow=o.receiveShadow=true;(p||scene).add(o);return o};
+const cy=(r,h,m,x,y,z,p,s=24)=>mk(new T.CylinderGeometry(r,r,h,s),m,x,y,z,p);
+const bx=(w,h,d,m,x,y,z,p)=>mk(new T.BoxGeometry(w,h,d),m,x,y,z,p);
+const px=(x1,x2,y,z,r,m,p)=>{const o=cy(r,Math.abs(x2-x1),m,(x1+x2)/2,y,z,p);o.rotation.z=PI/2;return o};
+const tag=(o,id)=>o.traverse(c=>{if(c.isMesh){c.userData.id=id;pick.push(c)}});
+function flange(x,y,z,p){const f=cy(.36,.1,steel,x,y,z,p);f.rotation.z=PI/2;for(let i=0;i<8;i++){const a=i/8*PI*2,b=cy(.035,.17,dark,x,y+Math.sin(a)*.29,z+Math.cos(a)*.29,p,6);b.rotation.z=PI/2}}
+
+mk(new T.PlaneGeometry(60,60),slab,0,0,0).rotation.x=-PI/2;
+const grid=new T.GridHelper(40,40,0x3b4a55,0x2a343c);grid.position.y=.01;scene.add(grid);
+
+/* ---------- process tank ---------- */
+const tk=G(-5,0,0);
+cy(2,4.4,paint,0,3,0,tk,48);
+[1,-1].forEach(s=>{const d=mk(new T.SphereGeometry(2,48,12,0,PI*2,0,PI/2),paint,0,3+s*2.2,0,tk);if(s<0)d.rotation.x=PI});
+[1.8,3,4.2].forEach(y=>{const t=mk(new T.TorusGeometry(2.02,.05,8,48),steel,0,y,0,tk);t.rotation.x=PI/2});
+[[1.4,1.4],[-1.4,1.4],[1.4,-1.4],[-1.4,-1.4]].forEach(p=>cy(.1,.9,steel,p[0],.45,p[1],tk,8));
+cy(.45,.3,steel,0,7.3,0,tk,16);px(2,3,1.5,0,.24,pipeM,tk);
+tag(tk,'tank');
+
+/* ---------- pipeline ---------- */
+const pl=G(0,0,0);
+px(-3,6,1.5,0,.22,pipeM,pl);mk(new T.SphereGeometry(.22,16,16),pipeM,6,1.5,0,pl);cy(.22,2,pipeM,6,2.5,0,pl,20);
+mk(new T.SphereGeometry(.22,16,16),pipeM,6,3.5,0,pl);const pz=cy(.22,3.5,pipeM,6,3.5,-1.75,pl,20);pz.rotation.x=PI/2;
+mk(new T.SphereGeometry(.22,16,16),pipeM,6,3.5,-3.5,pl);cy(.22,1.3,pipeM,6,2.85,-3.5,pl,20);
+[-1.5,1.2,3.6].forEach(x=>{bx(.22,1.2,.22,dark,x,.6,0,pl);bx(.5,.08,.4,steel,x,1.2,0,pl)});
+flange(-2.7,1.5,0,pl);flange(4.5,1.5,0,pl);tag(pl,'pipeline');
+// leak flange (clickable separately)
+const lf=G(0,0,0);flange(2.4,1.5,0,lf);px(2.2,2.6,1.5,0,.27,steel,lf);tag(lf,'leak');
+// separator vessel
+const sv=G(0,0,0);const v=cy(.9,3.2,paint,6,1.3,-3.5,sv,32);v.rotation.z=PI/2;
+[1,-1].forEach(s=>{const d=mk(new T.SphereGeometry(.9,24,12,0,PI*2,0,PI/2),paint,6+s*1.6,1.3,-3.5,sv);d.rotation.z=-s*PI/2;bx(.3,.5,1.2,dark,6+s*1,.25,-3.5,sv)});tag(sv,'sep');
+
+/* ---------- isolation valve ---------- */
+const vg=G(0,0,0);px(.2,.8,1.5,0,.3,steel,vg);flange(.2,1.5,0,vg);flange(.8,1.5,0,vg);
+mk(new T.SphereGeometry(.32,20,16),steel,.5,1.5,0,vg);cy(.09,.7,steel,.5,2.1,0,vg,12);cy(.2,.25,dark,.5,1.9,0,vg,12);
+const wheel=new T.Group();wheel.position.set(.5,2.5,0);vg.add(wheel);
+const wt=mk(new T.TorusGeometry(.26,.035,8,24),redM,0,0,0,wheel);wt.rotation.x=PI/2;
+[0,PI/2].forEach(a=>{const s=bx(.52,.03,.03,redM,0,0,0,wheel);s.rotation.y=a});tag(vg,'valve');
+
+/* ---------- sensing chain ---------- */
+const an=G(1.7,0,1.6);cy(.05,1.1,steel,0,.55,0,an,8);bx(.5,.1,.3,steel,0,.1,0,an);
+bx(.62,.82,.36,M(0x2f6f95,.4,.45),0,1.5,0,an);bx(.66,.06,.4,dark,0,1.94,0,an);
+const aScr=document.createElement('canvas');aScr.width=256;aScr.height=160;const aTex=new T.CanvasTexture(aScr);
+const aPl=new T.Mesh(new T.PlaneGeometry(.5,.32),new T.MeshBasicMaterial({map:aTex}));aPl.position.set(0,1.62,.186);an.add(aPl);
+[[-.25,1.15],[.25,1.15],[-.25,1.85],[.25,1.85]].forEach(p=>cy(.025,.03,steel,p[0],p[1],.19,an,6).rotation.x=PI/2);
+cy(.07,.1,dark,.1,1.25,.19,an,12).rotation.x=PI/2;
+tag(an,'analyzer');
+const sn=G(1.7,0,1.6);cy(.11,.38,steel,0,.88,0,sn,20);cy(.115,.05,dark,0,.67,0,sn,20);cy(.09,.05,M(0xcfd6db,.9,.3),0,.64,0,sn,16);tag(sn,'sensor');
+const inl=G(2.4,1.15,.6);const ic=mk(new T.ConeGeometry(.12,.22,20,1,true),M(0xcfd6db,.8,.3,{side:T.DoubleSide}),0,0,0,inl);ic.rotation.x=PI;cy(.03,.5,steel,0,.35,0,inl,8);tag(inl,'inlet');
+const tr=G(.9,0,2);cy(.045,.95,steel,0,.48,0,tr,8);bx(.46,.52,.26,M(0x1a4b6b,.5,.45),0,1.2,0,tr);
+const trLed=new T.MeshStandardMaterial({color:0x003300,emissive:0x00ff66,emissiveIntensity:0});mk(new T.SphereGeometry(.04,10,10),trLed,.14,1.38,.14,tr);
+const tScr=document.createElement('canvas');tScr.width=128;tScr.height=64;const tTex=new T.CanvasTexture(tScr);
+const tPl=new T.Mesh(new T.PlaneGeometry(.3,.15),new T.MeshBasicMaterial({map:tTex}));tPl.position.set(-.04,1.18,.135);tr.add(tPl);tag(tr,'transmitter');
+
+/* ---------- control panel ---------- */
+const cp=G(-1.5,0,3.6);bx(1.4,2.1,.6,cab,0,1.05,0,cp);bx(1.5,.1,.7,dark,0,2.15,0,cp);bx(1.5,.1,.7,dark,0,.05,0,cp);
+const pScr=document.createElement('canvas');pScr.width=512;pScr.height=320;const pTex=new T.CanvasTexture(pScr);
+const pPl=new T.Mesh(new T.PlaneGeometry(1.1,.69),new T.MeshBasicMaterial({map:pTex}));pPl.position.set(0,1.45,.305);cp.add(pPl);
+const lampM=c=>new T.MeshStandardMaterial({color:c,emissive:c,emissiveIntensity:.05});
+const pl3=[lampM(0x00ff00),lampM(0xffcc00),lampM(0xff0000)];
+pl3.forEach((m,i)=>cy(.07,.05,m,-.35+i*.35,.8,.31,cp,16).rotation.x=PI/2);
+cy(.06,.06,M(0x1e9a55),-.35,.45,.31,cp,16).rotation.x=PI/2;cy(.06,.06,M(0xb02a20),0,.45,.31,cp,16).rotation.x=PI/2;
+tag(cp,'panel');
+
+/* ---------- alarm beacon ---------- */
+const bc=G(4.2,0,2.6);cy(.06,3,steel,0,1.5,0,bc,8);bx(.5,.1,.5,steel,0,.05,0,bc);
+const lens=['g','y','r'].map((k,i)=>{const c={g:0x00dd44,y:0xffc400,r:0xff2010}[k];const m=new T.MeshStandardMaterial({color:c,emissive:c,emissiveIntensity:.08,transparent:true,opacity:.92});cy(.17,.22,m,0,3.1+i*.24,0,bc,24);return m});
+cy(.12,.06,dark,0,3.85,0,bc,12);const horn=cy(.12,.3,dark,.25,2.6,0,bc,16);horn.rotation.z=PI/2;tag(bc,'beacon');
+
+/* ---------- cables, tube & flows ---------- */
+function tube(pts,col,id,r=.025){const c=new T.CatmullRomCurve3(pts.map(p=>new T.Vector3(...p)));const m=mk(new T.TubeGeometry(c,40,r,8),M(col,.2,.6),0,0,0);tag(m,id);return c}
+const cSens=tube([[1.7,.64,1.6],[1.6,.3,1.9],[1.2,.3,2],[.9,.95,2]],0x1d2b36,'cable');
+const cTr=tube([[.67,1.2,2],[.2,.5,2.6],[-.5,.4,3.2],[-.8,1.1,3.6]],0x1d2b36,'cable');
+const cBc=tube([[-.8,.5,3.7],[.5,.1,4.2],[2.5,.1,3.8],[4.2,.3,2.6]],0x7a2d1a,'cable');
+const cSmp=tube([[2.4,1.0,.6],[2.35,.9,1.1],[2.2,1.3,1.5],[2.02,1.4,1.6]],0xb8c4cc,'tube',.02);
+const flows=[];
+function flow(c,n,col,vis,spd){const m=new T.MeshBasicMaterial({color:col}),ps=[];for(let i=0;i<n;i++){const s=new T.Mesh(new T.SphereGeometry(.05,10,10),m);scene.add(s);ps.push(s)}flows.push({c,ps,m,vis,spd,ph:0})}
+flow(cSens,4,0x00e5ff,()=>S.run,.5);flow(cTr,5,0x00e5ff,()=>S.run,.4);flow(cBc,6,0xff5030,()=>S.run&&S.level!=='NORMAL',.6);flow(cSmp,4,0xffa64d,()=>S.conc>60,.45);
+
+/* ---------- gas particles + cloud ---------- */
+const dt0=document.createElement('canvas');dt0.width=dt0.height=64;{const g=dt0.getContext('2d'),gr=g.createRadialGradient(32,32,0,32,32,32);gr.addColorStop(0,'#fff');gr.addColorStop(.4,'rgba(255,255,255,.5)');gr.addColorStop(1,'rgba(255,255,255,0)');g.fillStyle=gr;g.fillRect(0,0,64,64)}
+const N=600,pp=new Float32Array(N*3),pc=new Float32Array(N*3),pv=new Float32Array(N*3),pLife=new Float32Array(N),pMax=new Float32Array(N).fill(1);
+for(let i=0;i<N;i++)pp[i*3+1]=-100;
+const pg=new T.BufferGeometry();pg.setAttribute('position',new T.BufferAttribute(pp,3));pg.setAttribute('color',new T.BufferAttribute(pc,3));
+const pts=new T.Points(pg,new T.PointsMaterial({size:.34,map:new T.CanvasTexture(dt0),vertexColors:true,transparent:true,depthWrite:false,blending:T.AdditiveBlending}));pts.frustumCulled=false;scene.add(pts);
+const LP=new T.Vector3(2.4,1.5,.34);let ptr=0,acc=0;
+const cloud=new T.Mesh(new T.SphereGeometry(1,24,16),new T.MeshBasicMaterial({color:0xff9a3c,transparent:true,opacity:.1,depthWrite:false}));cloud.position.set(2.5,1.9,.8);scene.add(cloud);
+function spawn(){const i=ptr++%N,k=i*3;pp[k]=LP.x+(Math.random()-.5)*.1;pp[k+1]=LP.y+(Math.random()-.5)*.1;pp[k+2]=LP.z;
+pv[k]=(Math.random()-.5)*.7;pv[k+1]=.1+Math.random()*.5;pv[k+2]=.7+Math.random()*1.1;pLife[i]=pMax[i]=2.5+Math.random()*2.5}
+function gasStep(dt,flowRate){acc+=flowRate*dt;while(acc>=1){spawn();acc--}
+for(let i=0;i<N;i++){if(pLife[i]<=0)continue;const k=i*3;pLife[i]-=dt;if(pLife[i]<=0){pp[k+1]=-100;pc[k]=pc[k+1]=pc[k+2]=0;continue}
+const d=1-.7*dt;pv[k]=pv[k]*d+(Math.random()-.5)*2*dt;pv[k+1]=pv[k+1]*d+.45*dt+(Math.random()-.5)*dt;pv[k+2]=pv[k+2]*d+(Math.random()-.5)*2*dt;
+pp[k]+=pv[k]*dt;pp[k+1]+=pv[k+1]*dt;pp[k+2]+=pv[k+2]*dt;const a=Math.min(1,pLife[i]/pMax[i]*1.6)*.75;pc[k]=a;pc[k+1]=a*.62;pc[k+2]=a*.2}
+pg.attributes.position.needsUpdate=pg.attributes.color.needsUpdate=true}
+
+/* ---------- simulation state ---------- */
+const BASE=2,FS=25000,LC={STANDBY:'#7f8c8d',NORMAL:'#2ecc71',WARNING:'#f5c518',ALARM:'#ff3b30'};
+const S={run:false,leak:false,valve:true,conc:BASE,reading:BASE,target:12000,warn:5000,alarm:10000,unit:'ppm',mute:false,level:'STANDBY',hist:[]};
+const fmtN=v=>S.unit==='ppm'?Math.round(v)+'':(v/500).toFixed(1);
+const fmt=v=>fmtN(v)+' '+(S.unit==='ppm'?'ppm':'%LEL');
+const mA=()=>(4+16*Math.min(S.reading/FS,1)).toFixed(2);
+function physics(dt){const eff=S.leak&&S.valve,tg=eff?Math.max(S.target,BASE):BASE,k=tg>S.conc?.45:.22;
+S.conc+=(tg-S.conc)*(1-Math.exp(-k*dt));S.reading=Math.max(0,S.conc+(Math.random()-.5)*(2+S.conc*.012));
+S.level=!S.run?'STANDBY':S.reading>=S.alarm?'ALARM':S.reading>=S.warn?'WARNING':'NORMAL'}
+
+/* ---------- screens ---------- */
+function drawScr(cv,tex,w,h,big){const g=cv.getContext('2d'),c=LC[S.level];g.fillStyle='#050d0a';g.fillRect(0,0,w,h);
+g.fillStyle='#7fe3ff';g.font=`${big?22:16}px monospace`;g.fillText(big?'GAS MONITOR  CH1 · CH4':'CH4',10,big?30:20);
+g.fillStyle=c;g.font=`bold ${big?84:46}px monospace`;g.fillText(S.run?fmtN(S.reading):'---',10,big?130:84);
+g.font=`${big?26:18}px monospace`;g.fillText(S.unit==='ppm'?'ppm':'%LEL',10,big?165:110);
+if(big){g.fillStyle='#1b2a30';g.fillRect(10,185,w-20,22);const f=Math.min(S.reading/FS,1);g.fillStyle=c;g.fillRect(10,185,(w-20)*f,22);
+g.fillStyle='#f5c518';g.fillRect(10+(w-20)*S.warn/FS,180,3,32);g.fillStyle='#ff3b30';g.fillRect(10+(w-20)*S.alarm/FS,180,3,32);
+g.fillStyle=c;g.font='bold 34px monospace';g.fillText(S.level,10,252);g.fillStyle='#7fe3ff';g.font='20px monospace';g.fillText('4-20mA: '+mA()+' mA',10,292);
+g.strokeStyle=c;g.beginPath();const H=S.hist.slice(-80);H.forEach((p,i)=>{const x=w-170+i*2,y=h-20-Math.min(p.v/FS,1)*90;i?g.lineTo(x,y):g.moveTo(x,y)});g.stroke()}
+else{g.fillStyle=c;g.font='bold 20px monospace';g.fillText(S.level,10,148)}tex.needsUpdate=true}
+function drawTr(){const g=tScr.getContext('2d');g.fillStyle='#04120c';g.fillRect(0,0,128,64);g.fillStyle=LC[S.level];g.font='bold 26px monospace';g.fillText(S.run?mA():'--.--',6,28);g.font='16px monospace';g.fillText('mA  '+(S.run?'TX':'idle'),6,54);tTex.needsUpdate=true}
+
+/* ---------- info panel ---------- */
+const live=()=>fmt(S.reading);
+const INFO={
+pipeline:{t:'Gas pipeline',d:'Carbon-steel line carrying natural gas (mostly methane) from the process tank to the downstream separator. Flanged joints are typical leak sources.',s:['Material: carbon steel (illustrative)','Size: DN150, ~25 bar (illustrative)','Joints: flanged with stud bolts'],l:()=>'Line status: '+(S.leak&&S.valve?'LEAK at flange':'normal')},
+tank:{t:'Process tank',d:'Pressurised vertical vessel storing/processing hydrocarbon gas before it enters the pipeline.',s:['Vertical vessel with domed heads','Outlet nozzle to the gas line','Band stiffeners and support legs']},
+sep:{t:'Separator vessel',d:'Horizontal vessel that separates gas from liquids downstream of the pipeline.',s:['Horizontal drum on saddle supports','Fed from the pipeline riser']},
+leak:{t:'Flange (potential leak point)',d:'Bolted flange joint. Gaskets can degrade, so gas may escape here. The detector is placed close by, slightly below and downwind.',s:['8 stud bolts + gasket','Leak source in this simulation'],l:()=>'Leak: '+(S.leak?(S.valve?'ACTIVE':'ISOLATED by valve'):'OFF'),a:()=>[S.leak?'Turn leak OFF':'Turn leak ON',()=>setLeak(!S.leak)]},
+valve:{t:'Isolation valve',d:'Manual gate/ball valve used to isolate the section. Closing it cuts the gas supply to the leak, so the concentration decays.',s:['Hand-wheel operated','Flanged body, ANSI-style ends'],l:()=>'Valve: '+(S.valve?'OPEN':'CLOSED'),a:()=>[(S.valve?'Close':'Open')+' valve',()=>{S.valve=!S.valve}]},
+analyzer:{t:'Gas analyzer unit',d:'Field-mounted housing containing the methane sensing electronics and a local display. Receives gas through the sampling tube.',s:['Measuring range: 0–25000 ppm CH4 (0–50 %LEL)','Local LCD display','Typical rating: IP66, Ex-protected enclosure','Simulated educational device'],l:()=>'Local display: '+(S.run?fmt(S.reading):'standby')},
+sensor:{t:'Methane (CH4) sensor head',d:'Sensing element (typically infrared NDIR or catalytic bead) that converts methane concentration into an electrical signal.',s:['Target gas: methane (CH4)','Sintered metal flame-arrestor cap','Response time (T90): ~10 s (illustrative)'],l:()=>'Sensing: '+fmt(S.reading)},
+inlet:{t:'Gas sampling inlet',d:'Probe that draws ambient gas near the potential leak point and feeds it into the sampling tube.',s:['Funnel-type probe with filter','Positioned near the flange leak'],l:()=>'Gas at inlet: '+fmt(S.conc)},
+tube:{t:'Gas sampling tube',d:'Small-bore stainless/PTFE tube that transports the gas sample from the inlet to the analyzer.',s:['Material: stainless steel / PTFE','Kept short to reduce delay'],l:()=>'Sample flow: '+(S.conc>60?'gas present':'clean air')},
+cable:{t:'Signal cable',d:'Shielded instrument cable carrying the measurement signal (4–20 mA or digital) between sensor, transmitter and control panel.',s:['Shielded twisted pair','Protected against electrical noise'],l:()=>'Signal: '+(S.run?mA()+' mA':'no monitoring')},
+transmitter:{t:'Digital transmitter',d:'Converts the sensor output into a standard measurement signal (4–20 mA) and sends it to the control system.',s:['4 mA = 0 ppm, 20 mA = 25000 ppm','Digital display + status LED'],l:()=>'Output: '+(S.run?mA()+' mA':'idle')},
+panel:{t:'Control panel',d:'Receives the transmitter signal, shows the concentration, compares with thresholds and drives the alarm beacon.',s:['Warning and alarm setpoints','Concentration display and trend','Alarm output to beacon/horn'],l:()=>'Status: '+S.level+' · '+fmt(S.reading)},
+beacon:{t:'Alarm beacon',d:'Light tower with horn. Green = normal, yellow = warning, flashing red = alarm.',s:['Green / yellow / red lamps','Audible horn (sound can be muted)'],l:()=>'Beacon: '+S.level}};
+let sel=null,selBox=null;
+function showInfo(id){const i=INFO[id];if(!i)return;sel=id;$('it').textContent=i.t;$('idesc').textContent=i.d;$('is').innerHTML=i.s.map(x=>'<li>'+x+'</li>').join('');$('info').hidden=false;
+if(selBox){scene.remove(selBox);selBox=null}const b=new T.Box3();pick.forEach(m=>{if(m.userData.id===id)b.expandByObject(m)});selBox=new T.Box3Helper(b,0xf2a900);scene.add(selBox)}
+$('ix').onclick=()=>{$('info').hidden=true;sel=null;if(selBox){scene.remove(selBox);selBox=null}};
+$('ia').onclick=()=>{if(sel&&INFO[sel].a)INFO[sel].a()[1]()};
+
+/* ---------- camera tween ---------- */
+const VIEWS={ov:[[9,6,11],[0,2,0]],leak:[[4.4,2.5,3.6],[2.2,1.3,.8]],panel:[[-1,1.9,7],[-1.5,1.2,3.6]],tank:[[-9,5,7.5],[-5,2.5,0]],bc:[[7,4.5,6],[4.2,3.3,2.6]],sens:[[3.5,1.6,3.6],[1.7,1.1,1.5]]};
+let tw=null;const V3=a=>new T.Vector3(...a);
+function go(k){const v=VIEWS[k];tw={p0:cam.position.clone(),t0:ctl.target.clone(),p1:V3(v[0]),t1:V3(v[1]),t:0}}
+document.querySelectorAll('[data-v]').forEach(b=>b.onclick=()=>go(b.dataset.v));
+R.domElement.addEventListener('pointerdown',()=>{tw=null});
+
+/* ---------- picking ---------- */
+const ray=new T.Raycaster(),m2=new T.Vector2();let down=null;
+const hit=e=>{const r=R.domElement.getBoundingClientRect();m2.set((e.clientX-r.left)/r.width*2-1,-(e.clientY-r.top)/r.height*2+1);ray.setFromCamera(m2,cam);const h=ray.intersectObjects(pick,false);return h.length?h[0].object.userData.id:null};
+R.domElement.addEventListener('pointerdown',e=>{down=[e.clientX,e.clientY]});
+R.domElement.addEventListener('pointerup',e=>{if(down&&Math.hypot(e.clientX-down[0],e.clientY-down[1])<6){const id=hit(e);if(id)showInfo(id)}down=null});
+R.domElement.addEventListener('pointermove',e=>{if(e.buttons)return;R.domElement.style.cursor=hit(e)?'pointer':'grab'});
+
+/* ---------- labels ---------- */
+const LBL=[['Process tank',-5,5.9,0],['Gas pipeline',-1.6,2,0],['Isolation valve',.5,2.95,0],['Potential leak point',2.4,2.2,0],['Sampling inlet',3,.95,.8],['Methane sensor',2.3,.45,1.9],['Gas analyzer',1.7,2.2,1.6],['Digital transmitter',.6,1.8,2],['Signal cable',.1,.55,2.9],['Control panel',-1.5,2.45,3.6],['Alarm beacon',4.2,4.3,2.6],['Separator',6,2.5,-3.5]]
+.map(a=>{const e=document.createElement('div');e.className='lb';e.textContent=a[0];$('labels').appendChild(e);return{e,p:new T.Vector3(a[1],a[2],a[3])}});
+function labels(){const on=$('lab').checked,w=innerWidth,h=innerHeight;LBL.forEach(l=>{const v=l.p.clone().project(cam);if(!on||v.z>1){l.e.style.display='none';return}l.e.style.display='';l.e.style.transform=`translate(${(v.x*.5+.5)*w}px,${(-v.y*.5+.5)*h}px) translate(-50%,-120%)`})}
+
+/* ---------- controls ---------- */
+let ac=null,nextBeep=0;
+function beep(f,d){if(S.mute||!ac)return;const o=ac.createOscillator(),g=ac.createGain();o.frequency.value=f;o.type='square';g.gain.value=.05;o.connect(g);g.connect(ac.destination);o.start();g.gain.exponentialRampToValueAtTime(.001,ac.currentTime+d);o.stop(ac.currentTime+d)}
+function sync(){$('leak').checked=S.leak;$('slider').value=S.target;$('sv').textContent=S.target+' ppm ('+(S.target/500).toFixed(1)+' %LEL)';$('bStart').disabled=S.run;$('bStop').disabled=!S.run;$('warn').value=S.warn;$('alarm').value=S.alarm}
+function setLeak(b){S.leak=b;sync()}
+function setRun(b){S.run=b;if(b&&!ac){try{ac=new(window.AudioContext||window.webkitAudioContext)()}catch(e){}}sync()}
+$('bStart').onclick=()=>setRun(true);$('bStop').onclick=()=>setRun(false);
+$('bReset').onclick=()=>{Object.assign(S,{run:false,leak:false,valve:true,conc:BASE,reading:BASE,target:12000,warn:5000,alarm:10000,hist:[]});$('unit').value=S.unit='ppm';stopDemo();sync();go('ov')};
+$('leak').onchange=e=>setLeak(e.target.checked);
+$('slider').oninput=e=>{S.target=+e.target.value;sync()};
+$('warn').onchange=e=>{S.warn=Math.max(10,+e.target.value||5000);if(S.alarm<=S.warn)S.alarm=S.warn+500;sync()};
+$('alarm').onchange=e=>{S.alarm=Math.max(20,+e.target.value||10000);if(S.warn>=S.alarm)S.warn=Math.max(10,S.alarm-500);sync()};
+$('unit').onchange=e=>S.unit=e.target.value;$('mute').onchange=e=>S.mute=e.target.checked;
+
+/* ---------- how it works / diagram ---------- */
+const STEPS=[['Gas escapes from the pipeline','A gasket or flange joint fails and methane escapes under pressure from the pipeline.','leak',()=>setLeak(true)],
+['The gas spreads around the leak point','Methane is lighter than air, so the cloud expands and drifts upward and outward from the flange.','leak'],
+['The methane detector senses the gas','Gas is drawn in through the sampling inlet and tube; the sensor element responds to the methane concentration.','sens',()=>setRun(true)],
+['The transmitter sends a measurement signal','The transmitter converts the sensor output into a 4–20 mA signal that travels along the signal cable (animated pulses).','sens'],
+['The control panel displays the concentration','The panel receives the signal, shows the concentration and draws the live trend.','panel'],
+['The alarm activates when the threshold is exceeded','At the warning level the beacon turns yellow; above the alarm level it flashes red and the horn sounds.','bc']];
+let step=0,demoT=null;
+function showStep(i){step=(i+STEPS.length)%STEPS.length;const s=STEPS[step];$('hn').textContent='Step '+(step+1)+' of '+STEPS.length;$('ht').textContent=s[0];$('hd').textContent=s[1];
+$('dots').innerHTML=STEPS.map((_,k)=>'<b class="'+(k===step?'a':'')+'"></b>').join('');go(s[2]);if(s[3])s[3]()}
+function stopDemo(){clearInterval(demoT);demoT=null;$('hdemo').textContent='Run demo'}
+$('bHow').onclick=()=>{$('how').hidden=!$('how').hidden;if(!$('how').hidden)showStep(0);else stopDemo()};
+$('hx').onclick=()=>{$('how').hidden=true;stopDemo()};$('hp').onclick=()=>{stopDemo();showStep(step-1)};$('hnx').onclick=()=>{stopDemo();showStep(step+1)};
+$('hdemo').onclick=()=>{if(demoT){stopDemo();return}S.target=Math.max(S.target,S.alarm*1.5);sync();$('hdemo').textContent='Stop demo';showStep(0);demoT=setInterval(()=>showStep(step+1),5500)};
+$('bDiag').onclick=()=>$('diag').hidden=false;$('dx').onclick=()=>$('diag').hidden=true;
+
+/* ---------- UI refresh / graph ---------- */
+function graph(){const c=$('gr'),w=c.clientWidth,h=c.clientHeight,d=Math.min(devicePixelRatio||1,2);if(c.width!==w*d||c.height!==h*d){c.width=w*d;c.height=h*d}
+const g=c.getContext('2d');g.setTransform(d,0,0,d,0,0);g.clearRect(0,0,w,h);const H=S.hist;let mx=S.alarm*1.25;H.forEach(p=>{if(p.v>mx)mx=p.v});const y=v=>h-14-v/mx*(h-22);
+g.font='10px sans-serif';g.strokeStyle='#1f2d37';g.fillStyle='#8aa0b0';for(let i=0;i<=4;i++){const v=mx*i/4;g.beginPath();g.moveTo(0,y(v));g.lineTo(w,y(v));g.stroke();g.fillText(fmtN(v),2,y(v)-2)}
+g.setLineDash([5,4]);[[S.warn,'#f5c518','WARN'],[S.alarm,'#ff3b30','ALARM']].forEach(t=>{g.strokeStyle=t[1];g.fillStyle=t[1];g.beginPath();g.moveTo(0,y(t[0]));g.lineTo(w,y(t[0]));g.stroke();g.fillText(t[2],w-36,y(t[0])-3)});g.setLineDash([]);
+g.lineWidth=2;for(let i=1;i<H.length;i++){g.strokeStyle=LC[H[i].l];g.beginPath();g.moveTo(w-(H.length-i+1)*w/600,y(H[i-1].v));g.lineTo(w-(H.length-i)*w/600,y(H[i].v));g.stroke()}
+g.lineWidth=1;g.fillStyle='#8aa0b0';g.fillText('last 60 s of monitoring ('+(S.unit)+')',w/2-60,h-2)}
+function ui(){const c=LC[S.level];$('big').textContent=S.run?fmtN(S.reading):'---';$('big').style.color=c;$('ul').textContent=S.run?(S.unit==='ppm'?'ppm':'%LEL'):'';
+const st=$('stat');st.textContent=S.level;st.style.background=c;st.style.color=S.level==='WARNING'?'#222':'#fff';
+$('sub').textContent='CH4 · '+(S.reading/10000).toFixed(3)+' %vol · '+(S.reading/500).toFixed(1)+' %LEL';
+$('lg').classList.toggle('on',S.level==='NORMAL');$('ly').classList.toggle('on',S.level==='WARNING'||S.level==='ALARM');$('lr').classList.toggle('on',S.level==='ALARM');
+if(sel){const i=INFO[sel];$('live').textContent=i.l?i.l():live();$('live').hidden=false;const a=$('ia');if(i.a){const x=i.a();a.hidden=false;a.textContent=x[0]}else a.hidden=true}
+drawScr(pScr,pTex,512,320,true);drawScr(aScr,aTex,256,160,false);drawTr();graph()}
+
+/* ---------- main loop ---------- */
+function resize(){const w=innerWidth,h=innerHeight;R.setSize(w,h);cam.aspect=w/h;cam.updateProjectionMatrix()}addEventListener('resize',resize);resize();
+const clock=new T.Clock();let tUi=0,tH=0,time=0;
+sync();ui();
+(function loop(){requestAnimationFrame(loop);const dt=Math.min(clock.getDelta(),.1);time+=dt;
+physics(dt);
+tH+=dt;while(tH>=.1){tH-=.1;if(S.run){S.hist.push({v:S.reading,l:S.level});if(S.hist.length>600)S.hist.shift()}}
+tUi+=dt;if(tUi>.12){tUi=0;ui()}
+// gas visuals
+const eff=S.leak&&S.valve;gasStep(dt,eff?25+120*Math.min(S.target/FS,1):0);
+const fr=Math.min(S.conc/FS,1);cloud.visible=S.conc>40;cloud.scale.setScalar(.35+fr*2.4);cloud.material.opacity=.04+fr*.2;cloud.material.color.set(S.level==='ALARM'?0xff5a3c:0xff9a3c);
+// flows
+flows.forEach(f=>{f.ph=(f.ph+dt*f.spd)%1;const v=f.vis();f.ps.forEach((s,i)=>{s.visible=v;if(v)s.position.copy(f.c.getPoint((f.ph+i/f.ps.length)%1))})});
+// beacon & lamps
+const fl=Math.floor(time*3)%2===0,sl=Math.floor(time*1.2)%2===0,L=S.level;
+const on=[L==='NORMAL',L==='WARNING'&&sl||L==='ALARM'&&false,L==='ALARM'&&fl];
+lens.forEach((m,i)=>m.emissiveIntensity=on[i]?2:.08);pl3.forEach((m,i)=>m.emissiveIntensity=[L==='NORMAL',L==='WARNING'||L==='ALARM',L==='ALARM'][i]?1.6:.05);
+bl.color.set(on[2]?0xff2010:on[1]?0xffc400:0x00dd44);bl.intensity=on[2]?3:on[1]?2:on[0]?.7:0;
+trLed.emissiveIntensity=S.run&&Math.floor(time*4)%2===0?2:0;
+// audio
+if(S.run&&ac&&time>nextBeep){if(L==='ALARM'){beep(900,.18);nextBeep=time+.35}else if(L==='WARNING'){beep(500,.15);nextBeep=time+1.6}}
+// valve wheel
+const wt2=S.valve?0:PI*1.5;wheel.rotation.y+=(wt2-wheel.rotation.y)*Math.min(1,dt*3);
+// camera tween
+if(tw){tw.t+=dt/1.4;const k=Math.min(tw.t,1),e=k<.5?2*k*k:1-Math.pow(-2*k+2,2)/2;cam.position.lerpVectors(tw.p0,tw.p1,e);ctl.target.lerpVectors(tw.t0,tw.t1,e);if(k>=1)tw=null}
+ctl.update();R.render(scene,cam);labels()})();
+})();
+</script></body></html>
